@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reparaciones El Profe · Mensajes de la rifa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#f3f6fb; --card:#ffffff; --ink:#14213d; --muted:#64708a; --line:#e2e8f2;
+    --brand:#1d4ed8; --brand-2:#0ea5e9; --wa:#25d366; --wa-dark:#128c7e;
+    --gold:#f59e0b; --mant:#2563eb; --rep:#7c3aed; --ok:#16a34a; --warn:#dc2626;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Outfit",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;padding:28px 16px 70px}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+  header h1{margin:0;font-size:clamp(1.5rem,4vw,2.1rem);font-weight:700}
+  header p{margin:6px 0 0;opacity:.9}
+  main{margin-top:-48px;padding-bottom:60px}
+  .panel{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 28px rgba(20,33,61,.08);padding:20px;margin-bottom:18px}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  label{font-size:.85rem;color:var(--muted);display:block;margin-bottom:5px;font-weight:500}
+  input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit}
+  .drop{border:2px dashed #b9c6dd;border-radius:14px;padding:22px;text-align:center;cursor:pointer;transition:.2s}
+  .drop:hover,.drop.over{border-color:var(--brand);background:#eef4ff}
+  .drop strong{color:var(--brand)}
+  .note{font-size:.82rem;color:var(--muted);margin-top:8px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .stat{background:var(--bg);border-radius:12px;padding:12px 14px}
+  .stat b{display:block;font-size:1.6rem}
+  .stat span{font-size:.8rem;color:var(--muted)}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer;color:var(--ink)}
+  .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .btn{border:0;border-radius:10px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .btn-wa{background:var(--wa);color:#fff}
+  .btn-wa:hover{background:var(--wa-dark)}
+  .btn-ghost{background:var(--bg);color:var(--ink)}
+  .btn-dark{background:var(--ink);color:#fff}
+  .list{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
+  .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px;position:relative}
+  .card.sent{opacity:.6}
+  .card.focus{outline:3px solid var(--brand)}
+  .card h3{margin:0;font-size:1.05rem}
+  .phone{color:var(--muted);font-size:.9rem}
+  .phone.bad{color:var(--warn);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:.72rem;background:var(--bg);border-radius:999px;padding:4px 9px;color:var(--muted)}
+  .badge{font-size:.75rem;font-weight:600;padding:4px 10px;border-radius:999px;color:#fff;align-self:flex-start}
+  .b-win{background:var(--gold)} .b-mant{background:var(--mant)} .b-rep{background:var(--rep)}
+  .why{font-size:.8rem;color:var(--muted);margin:0}
+  textarea{width:100%;min-height:210px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:.9rem;resize:vertical;background:#fbfcfe}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  select{border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;background:#fff}
+  .sentmark{position:absolute;top:14px;right:14px;color:var(--ok);font-weight:700;font-size:.85rem}
+  .empty{text-align:center;color:var(--muted);padding:30px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;opacity:0;transition:.3s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1}
+  @media (max-width:420px){.list{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>🖥️ Reparaciones El Profe · Mensajes de la rifa</h1>
+    <p>Carga el Excel del formulario, revisa cada mensaje y envíalo por WhatsApp con un clic.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="panel">
+    <div class="grid">
+      <div style="grid-column:1/-1">
+        <div class="drop" id="drop">
+          📂 <strong>Arrastra aquí el Excel (.xlsx) o CSV del formulario</strong><br>
+          <span class="note">o haz clic para seleccionarlo</span>
+          <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+        </div>
+        <p class="note">🔒 El archivo se procesa solo en tu navegador: los datos de los participantes no se suben a internet ni quedan en GitHub.</p>
+      </div>
+      <div><label for="winMant">Ganador(a) del mantenimiento</label><input type="text" id="winMant" value="Beatriz Castaño Duque"></div>
+      <div><label for="winUsb">Ganador(a) de la memoria USB</label><input type="text" id="winUsb" value="Juan de Dios Cornejo Gomez"></div>
+      <div><label for="vig">Descuento válido hasta</label><input type="text" id="vig" value="30 de noviembre"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="statsPanel" hidden>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="toolbar">
+      <div class="tabs" id="tabs"></div>
+      <div class="row">
+        <button class="btn btn-dark" id="nextBtn">➡️ Siguiente pendiente</button>
+        <button class="btn btn-ghost" id="resetBtn">↺ Reiniciar enviados</button>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== CONFIGURACIÓN ===================== */
+const COUNTRY = "57";          // Indicativo Colombia
+const STORE_KEY = "elprofe_rifa_enviados";
+
+/* ===================== UTILIDADES ===================== */
+const $ = s => document.querySelector(s);
+const norm = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+const cap = w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
+
+function firstName(full){
+  const t = String(full||"").trim().split(/\s+/).filter(Boolean);
+  if(!t.length) return "";
+  let n;
+  if(t.length>=3 && /^(de|del)$/i.test(t[1])) n = t.slice(0,3);      // Juan de Dios, María del Pilar
+  else if(t.length>=4) n = t.slice(0,2);                               // Juan Jacobo, María José
+  else n = t.slice(0,1);
+  return n.map((w,i)=> (i>0 && /^(de|del)$/i.test(w)) ? w.toLowerCase() : cap(w)).join(" ");
+}
+function phone(raw){
+  let d = String(raw??"").replace(/\.0+$/,"").replace(/\D/g,"");
+  if(d.length===10 && d.startsWith("3")) d = COUNTRY + d;
+  const ok = /^573\d{9}$/.test(d);
+  return {wa:d, ok, show: ok ? `+57 ${d.slice(2,5)} ${d.slice(5,8)} ${d.slice(8)}` : (String(raw||"").trim()||"Sin número")};
+}
+function loadSent(){ try{return JSON.parse(localStorage.getItem(STORE_KEY))||{}}catch(e){return {}} }
+function saveSent(){ try{localStorage.setItem(STORE_KEY,JSON.stringify(sent))}catch(e){} }
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1800); }
+
+/* ===================== SEGMENTACIÓN ===================== */
+/* Mantenimiento con 10%: equipo lento/crítico, sin mantenimiento hace más de 1 año (o nunca),
+   o pidió agendar revisión. Repuestos/accesorios con 10%: equipo en buen estado y con
+   mantenimiento reciente → la oportunidad es potenciarlo (RAM, discos, accesorios). */
+function classify(p){
+  const e = norm(p.estado), m = norm(p.mant), i = norm(p.interes);
+  const reasons = [];
+  if(e.includes("critico")) reasons.push("equipo con fallas");
+  if(e.includes("lento")) reasons.push("equipo lento");
+  if(m.includes("mas de 1") || m.includes("nunca")) reasons.push(m.includes("nunca") ? "nunca ha tenido mantenimiento" : "más de 1 año sin mantenimiento");
+  if(i.startsWith("si")) reasons.push("pidió agendar revisión");
+  if(reasons.length) return {seg:"mant", why:"Mantenimiento: "+reasons.join(", ")};
+  return {seg:"rep", why:"Repuestos: equipo en buen estado y mantenimiento reciente → potenciarlo"};
+}
+
+function hookMant(p){
+  const e = norm(p.estado), m = norm(p.mant), i = norm(p.interes);
+  if(i.startsWith("si")) return "Nos dijiste que tu computador necesita una revisión: este es el momento ideal para hacerla.";
+  if(e.includes("critico")) return "Nos contaste que tu equipo está presentando fallas; revisarlo a tiempo evita daños mayores y pérdida de información.";
+  if(e.includes("lento")) return "Nos contaste que tu equipo se pone lento; un buen mantenimiento puede devolverle la agilidad.";
+  if(m.includes("nunca")) return "Nos contaste que tu equipo nunca ha tenido mantenimiento; una limpieza a tiempo lo protege y alarga su vida.";
+  if(e.includes("aceptable")) return "Nos contaste que a veces se recalienta; una limpieza interna lo mantiene fresco y le alarga la vida.";
+  return "Tu equipo funciona bien, y un mantenimiento a tiempo hará que siga así por mucho más tiempo.";
+}
+function hookRep(p){
+  const g = norm(p.mejora).split(",")[0];
+  if(g.includes("velocidad")) return "Nos contaste que quieres más velocidad: con un disco de estado sólido o más memoria RAM, tu equipo enciende y abre programas en segundos.";
+  if(g.includes("almacenamiento")) return "Nos contaste que te importa no perder tus archivos: un disco duro adicional te da espacio seguro para tus documentos y proyectos.";
+  return "Tenemos discos duros, memorias RAM y accesorios para que tu equipo rinda más y te dure muchos años.";
+}
+
+function buildMsg(p){
+  const n = p.nombreCorto, vig = $("#vig").value.trim() || "fin de mes";
+  if(p.seg==="winMant") return `¡Hola, ${n}! 🎉
+
+¡Felicitaciones! Ganaste el *mantenimiento preventivo gratuito* en la rifa de Reparaciones El Profe en la *Feria de Emprendimiento de la Universidad de Caldas*.
+
+Gracias por compartirnos tu experiencia; tu computador te lo va a agradecer 💙
+
+👉 Respóndeme este mensaje y agendamos el día que mejor te quede. Si prefieres, recogemos tu equipo a domicilio.
+
+Cualquier duda o inconveniente, aquí estoy para ayudarte.`;
+
+  if(p.seg==="winUsb") return `¡Hola, ${n}! 🎉
+
+¡Felicitaciones! Ganaste la *memoria USB de 32 GB* en la rifa de Reparaciones El Profe en la *Feria de Emprendimiento de la Universidad de Caldas*.
+
+Gracias por participar y compartirnos tu experiencia 💙
+
+👉 Respóndeme este mensaje y coordinamos la entrega.
+
+Por cierto, también tenemos discos duros y memorias RAM para darle más capacidad a tu equipo. Cualquier duda, con gusto te ayudo.`;
+
+  if(p.seg==="mant") return `¡Hola, ${n}! 😊
+
+Gracias por participar en la rifa de Reparaciones El Profe en la *Feria de Emprendimiento de la Universidad de Caldas*. Esta vez la suerte no te acompañó en el sorteo, pero igual ganaste: *10% de descuento en el mantenimiento preventivo de tu equipo* 🎁
+
+${hookMant(p)}
+
+👉 Responde *QUIERO* y lo agendamos; recogemos tu equipo a domicilio. Válido hasta el ${vig}.
+
+También tenemos discos duros y memorias RAM para mejorar tu equipo. Si tienes dudas o algún inconveniente, escríbeme con toda confianza.`;
+
+  return `¡Hola, ${n}! 😊
+
+Gracias por participar en la rifa de Reparaciones El Profe en la *Feria de Emprendimiento de la Universidad de Caldas*. Esta vez la suerte no te acompañó en el sorteo, pero igual ganaste: *10% de descuento en repuestos y accesorios para tu equipo* 🎁
+
+${hookRep(p)}
+
+👉 Responde *QUIERO* y te envío opciones y precios sin compromiso. Válido hasta el ${vig}.
+
+Si tienes dudas o algún inconveniente, escríbeme con toda confianza.`;
+}
+
+/* ===================== LECTURA DEL ARCHIVO ===================== */
+function findCol(headers, ...keys){
+  const h = headers.map(norm);
+  for(const k of keys){ const i = h.findIndex(x=>x.includes(k)); if(i>-1) return i; }
+  return -1;
+}
+function parseRows(rows){
+  const headers = rows[0].map(x=>String(x??""));
+  const c = {
+    nombre: findCol(headers,"nombre"),
+    tel: findCol(headers,"whatsapp","telefono","celular"),
+    estado: findCol(headers,"como se porta","estado"),
+    mant: findCol(headers,"hace cuanto","mantenimiento preventivo"),
+    mejora: findCol(headers,"que mejora","mejora"),
+    interes: findCol(headers,"te interesaria","revisemos","tarifas")
+  };
+  if(c.nombre<0 || c.tel<0){ alert("No encontré las columnas de nombre y WhatsApp en el archivo."); return []; }
+  const g = i => i<0 ? "" : null;
+  return rows.slice(1).filter(r=>r && String(r[c.nombre]??"").trim()).map((r,idx)=>{
+    const get = i => i<0 ? "" : String(r[i]??"").trim();
+    const full = get(c.nombre).replace(/\s+/g," ");
+    return { id: idx, nombre: full, nombreCorto: firstName(full), tel: phone(r[c.tel]),
+      estado: get(c.estado), mant: get(c.mant), mejora: get(c.mejora), interes: get(c.interes) };
+  });
+}
+function handleFile(f){
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, {type:"array"});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+    people = parseRows(rows);
+    assign(); render();
+    toast(`${people.length} participantes cargados`);
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+/* ===================== ESTADO Y RENDER ===================== */
+let people = [], sent = loadSent(), filter = "todos", overrides = {};
+
+function assign(){
+  const wm = norm($("#winMant").value), wu = norm($("#winUsb").value);
+  people.forEach(p=>{
+    const n = norm(p.nombre);
+    const auto = classify(p);
+    p.why = auto.why;
+    if(wm && n===wm){ p.seg="winMant"; p.why="Ganador(a) del mantenimiento gratuito"; }
+    else if(wu && n===wu){ p.seg="winUsb"; p.why="Ganador(a) de la memoria USB 32 GB"; }
+    else p.seg = overrides[p.tel.wa] || auto.seg;
+    if(!p.edited) p.msg = buildMsg(p);
+  });
+  people.sort((a,b)=> rank(a)-rank(b) || a.id-b.id);
+}
+const rank = p => ({winMant:0,winUsb:1,mant:2,rep:3})[p.seg];
+const isSent = p => !!sent[p.tel.wa];
+const segLabel = {winMant:"🏆 Ganó mantenimiento", winUsb:"🏆 Ganó memoria USB", mant:"🔧 10% mantenimiento", rep:"🛒 10% repuestos/accesorios"};
+const segClass = {winMant:"b-win", winUsb:"b-win", mant:"b-mant", rep:"b-rep"};
+
+function visible(){
+  return people.filter(p=>{
+    if(filter==="ganadores") return p.seg.startsWith("win");
+    if(filter==="mant") return p.seg==="mant";
+    if(filter==="rep") return p.seg==="rep";
+    if(filter==="pend") return !isSent(p);
+    if(filter==="env") return isSent(p);
+    return true;
+  });
+}
+
+function render(){
+  $("#app").hidden = $("#statsPanel").hidden = !people.length;
+  const cnt = f => people.filter(f).length;
+  $("#stats").innerHTML = [
+    [people.length,"Participantes"],
+    [cnt(p=>p.seg.startsWith("win")),"Ganadores"],
+    [cnt(p=>p.seg==="mant"),"10% mantenimiento"],
+    [cnt(p=>p.seg==="rep"),"10% repuestos"],
+    [cnt(isSent),"Enviados"],
+    [cnt(p=>!isSent(p)),"Pendientes"]
+  ].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+  const tabs = [["todos","Todos"],["ganadores","Ganadores"],["mant","Mantenimiento"],["rep","Repuestos"],["pend","Pendientes"],["env","Enviados"]];
+  $("#tabs").innerHTML = tabs.map(([k,l])=>`<button class="tab ${filter===k?"active":""}" data-f="${k}">${l}</button>`).join("");
+
+  const list = visible();
+  $("#list").innerHTML = list.length ? list.map(card).join("") : `<div class="empty">No hay participantes en esta vista.</div>`;
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function card(p){
+  const win = p.seg.startsWith("win");
+  return `<article class="card ${isSent(p)?"sent":""}" id="c${p.id}">
+    ${isSent(p)?'<span class="sentmark">✓ Enviado</span>':""}
+    <span class="badge ${segClass[p.seg]}">${segLabel[p.seg]}</span>
+    <div><h3>${esc(p.nombre)}</h3><div class="phone ${p.tel.ok?"":"bad"}">📱 ${esc(p.tel.show)}${p.tel.ok?"":" · revisar número"}</div></div>
+    <div class="chips">
+      ${p.estado?`<span class="chip">${esc(p.estado.split(":")[0])}</span>`:""}
+      ${p.mant?`<span class="chip">🧹 ${esc(p.mant.replace(/\(.*\)/,"").trim())}</span>`:""}
+    </div>
+    <p class="why">${esc(p.why)}</p>
+    <textarea data-id="${p.id}">${esc(p.msg)}</textarea>
+    <div class="row">
+      <button class="btn btn-wa" data-send="${p.id}" ${p.tel.ok?"":"disabled title='Número inválido'"}>💬 Enviar por WhatsApp</button>
+      <button class="btn btn-ghost" data-copy="${p.id}">📋 Copiar</button>
+      ${win?"":`<select data-seg="${p.id}" title="Cambiar beneficio">
+        <option value="mant" ${p.seg==="mant"?"selected":""}>10% mantenimiento</option>
+        <option value="rep" ${p.seg==="rep"?"selected":""}>10% repuestos</option></select>`}
+      ${isSent(p)?`<button class="btn btn-ghost" data-unsend="${p.id}">Desmarcar</button>`:""}
+    </div>
+  </article>`;
+}
+
+const byId = id => people.find(p=>p.id===+id);
+
+function send(p){
+  const url = `https://wa.me/${p.tel.wa}?text=${encodeURIComponent(p.msg)}`;
+  window.open(url, "_blank");
+  sent[p.tel.wa] = Date.now(); saveSent(); render();
+}
+
+/* ===================== EVENTOS ===================== */
+const drop = $("#drop"), fileIn = $("#file");
+drop.onclick = () => fileIn.click();
+fileIn.onchange = e => e.target.files[0] && handleFile(e.target.files[0]);
+["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over")}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over")}));
+drop.addEventListener("drop",e=>e.dataTransfer.files[0] && handleFile(e.dataTransfer.files[0]));
+
+["winMant","winUsb","vig"].forEach(id=>$("#"+id).addEventListener("input",()=>{ people.forEach(p=>p.edited=false); assign(); render(); }));
+
+document.addEventListener("click",e=>{
+  const t = e.target.closest("button"); if(!t) return;
+  if(t.dataset.f){ filter=t.dataset.f; render(); }
+  else if(t.dataset.send){ send(byId(t.dataset.send)); }
+  else if(t.dataset.copy){ const p=byId(t.dataset.copy); navigator.clipboard.writeText(p.msg).then(()=>toast("Mensaje copiado")); }
+  else if(t.dataset.unsend){ delete sent[byId(t.dataset.unsend).tel.wa]; saveSent(); render(); }
+});
+document.addEventListener("input",e=>{
+  if(e.target.matches("textarea[data-id]")){ const p=byId(e.target.dataset.id); p.msg=e.target.value; p.edited=true; }
+});
+document.addEventListener("change",e=>{
+  if(e.target.matches("select[data-seg]")){ const p=byId(e.target.dataset.seg); overrides[p.tel.wa]=e.target.value; p.edited=false; assign(); render(); }
+});
+$("#nextBtn").onclick = ()=>{
+  const p = people.find(x=>!isSent(x) && x.tel.ok);
+  if(!p) return toast("¡Todos los mensajes fueron enviados! 🎉");
+  filter="todos"; render();
+  const el = $("#c"+p.id); el.classList.add("focus"); el.scrollIntoView({behavior:"smooth",block:"center"});
+  setTimeout(()=>el.classList.remove("focus"),2500);
+};
+$("#resetBtn").onclick = ()=>{ if(confirm("¿Desmarcar todos los mensajes enviados?")){ sent={}; saveSent(); render(); } };
+</script>
+</body>
+</html>
